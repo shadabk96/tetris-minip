@@ -1,0 +1,31 @@
+ncurses.h =>
+
+initscr() : sets up the internal memory structures and input/output 	interfaces between the NCurses functions and your computer’s terminal.
+
+w = newwin( rows, columns, y-origin, x-origin); : New Window where w = WINDOW *
+
+box(w, 0, 0); : Box inside window
+
+wattron(w, A_STANDOUT )  : highlights selected
+wattroff(w, A_STANDOUT )
+
+mvwprintw( w, int row, int column, "%s", char *string) : Prints at a particular location in window.
+
+wrefresh( w ); : update the terminal screen
+
+keypad(w, TRUE) : enable keyboard
+
+wgetch(w) : get key input without pressing enter.
+
+cursor_vis(0); : turns off cursor
+
+endwin(); : closes window
+
+nodelay(stdscr, TRUE); : no delay
+
+random() : generates a random no.
+
+memset(unsigned char *, char, length or space);
+
+timeout.tv_sec = 0;
+	timeout.tv_usec = delay[level];

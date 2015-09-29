@@ -1,0 +1,26 @@
+algo :-
+
+first empty grid/ board
+1. block appears  <-------------,
+2. falls down slowly	        |
+3. responds to keys             |
+4. if reaches bottom then stops |
+5. check for complete rows      |
+repeat -------------------------'
+
+1.	Define set of blocks
+	define each possible rotation.
+	define initial position.
+
+2.	Falling
+	row = row++;
+
+3.	responds to keys
+	moves left right down rotates
+	
+4.	if bottom then stop
+
+5.if rows complete :
+	remove comlpete row
+	shift rest of the blocks (above the row) down, by 1 row.
+
