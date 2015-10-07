@@ -134,7 +134,7 @@ int main() {
 	mvwprintw(w1, 0, 10, "GAME WINDOW");
 	wrefresh( w1 );
 start_color();
-init_pair(1, COLOR_BLACK, COLOR_RED);
+init_pair(1, COLOR_RED, COLOR_BLACK);
 
 	int y = 2, x = 2, type = 2, orient = 0;
 
