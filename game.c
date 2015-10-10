@@ -8,7 +8,10 @@
 #define WELL_WIDTH 32
 #define NO_LEVELS 10
 
-
+/* Points are stored in three parts : points, lines, levels
+ *
+ * DOT is the structure defining the blocks
+ */
 typedef struct points {
 	unsigned int points;
 	unsigned int lines;
@@ -20,11 +23,16 @@ typedef struct dot {
 	unsigned char x;
 } DOT;
 
-char *well_data;
 
+
+/* well_data defines the occupancy of well  in terms of a character array.
+ * delay[] is the time delay in microseconds depending on the level no.
+ */
+char *well_data;
 int delay[NO_LEVELS] = {1000000, 770000, 593000, 457000, 352000, 271000, 208000, 160000, 124000, 95000};
 
 //block_data[types][orientations][dots]
+//defining the blocks
 const DOT block_data[7][4][4] =
 {
 	{
@@ -71,10 +79,23 @@ const DOT block_data[7][4][4] =
 	}
 };		
 
-POINTS check_lines(int start) {
+
+//checks if the block can be moved to the next location
+int check_pos(int y, int x, int type, int orient) {
+	int i;
+	for(i = 0; i < 4; i++) {
+		dot = block_data[type][orient][i];
+		if ((y + dot.y > WELL_HEIGHT - 1)		||
+		    (x + dot.x < 0) 				||
+		    (x + dot.x > WELL_WIDTH - 1))
+		        	return 0;
+	}
+	return 1;
 	
 }
 
+
+// Draws or erases the block depending on the delete value
 void draw_block(WINDOW *win, int y, int x, int type, int orient, char delete)
 {	
 	int i;
@@ -87,19 +108,81 @@ void draw_block(WINDOW *win, int y, int x, int type, int orient, char delete)
 	}
 	if (delete == 0)
 		wrefresh(win);
-}	
-/*
+}
+
+/* Drops block till it reaches either well floor or another line
+ * Uses time variables
+ * Controls the block while it falls
+ */
 int drop_block(int type, int level) {
 	int mid = WELL_WIDTH / 2 - 2;
 	int y = 0;
-	int x = defx;
+	int x = mid;
 	int orient = 0;
-	int num;
+	char ch;
+	fd_set t1, t2;
+	struct timeval timeout;
+	int sel_ret;
+
+	if(0) 				//check if game over
+		return;
 
 	timeout.tv_sec = 0;
 	timeout.tv_usec = delay[level];
+
+	FD_ZERO(&t1);			//initialise
+	FD_SET(0, &t1);
+	
+	draw_block(w1, y, x, type, orient, 0);
+	
+	while(1) {
+		t2 = t1;
+		sel_ret = select(FD_SETSIZE, &t2, (fd_set *) 0, (fd_set *) 0, &timeout);
+	
+		ch = getch();
+	
+		switch (ch) {
+			case 'j':							//-------------------------------move left
+				if(check_pos(y, x - 1, type, orient)) {
+					draw_block(w1, y, x, type, orient, 1);
+					draw_block(w1, y, --x, type, orient, 0);
+				}
+				break;
+			case 'l':							//-------------------------------move right
+				if(check_pos(y, x + 1, type, orient)) {
+					draw_block(w1, y, x, type, orient, 1);
+					draw_block(w1, y, ++x, type, orient, 0);
+				}
+				break;
+			case 'i':							//-----------------------------------rotate
+				if (check_pos(y, x, type,	orient + 1 == BLOCK_ORIENTS? 0 : orient + 1)) {
+					draw_block(w1, y, x, type, orient, 1);
+					++orient == BLOCK_ORIENTS? orient = 0 : 0;
+					draw_block(w1, y, x, type, orient, 0);
+				}
+				break;
+			case 'k':							//---------------------------------move down
+				sel_ret = 0;
+				break;
+		}
+		
+		if(sel_ret == 0) {
+			if(check_pos(y + 1, x, type, orient))
+				draw_block(w1, y, x, type, orient, 1);
+				draw_block(w1, ++y, x, type, orient, 0);
+			else 
+				fix and return;					//------------------------------- fix block in place
+			timeout.tv_sec = 0;
+			timeout.tv_usec = delay[level];
+		}
+	}
 }
 
+/* Actual loop of the game.
+ * initialises well_data, calls drop_block, sets score
+ *
+ */
+/*
 POINTS play_game(int level) {
 
 	POINTS points;
@@ -115,7 +198,7 @@ POINTS play_game(int level) {
 	points.level = 0;
 	
 	while(1) {
-		
+		y = drop_block(curr, points.level);
 		
 	}
 }*/
