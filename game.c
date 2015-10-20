@@ -35,6 +35,7 @@ WINDOW *w1;
 
 //block_data[types][orientations][dots]
 //defining the blocks
+// (y, x)
 const DOT block_data[7][4][4] =
 {
 	{
@@ -87,19 +88,100 @@ char *yx2pointer(int y, int x)
 	return well_data + (y * WELL_WIDTH) + x;
 }
 
-//Redraws well with the new fixed block
-void update_well(int start, int lines)
+//Redraws well
+void update_well(int row)
 {
-	int y, x;
-	
+	int y = 0, x = 0, i;
+	/*
 	for (y = start; y < (start + lines); y++)	{
 		wmove(w1, y, 0);
 		for (x = 0; x < WELL_WIDTH; x++) {
 			wattrset(w1, COLOR_PAIR(1));
 			mvwprintw(w1, y, 2 * x, "  ");
 		}
+	}*//*
+	for(row = row; row > 0; row--) {
+		for(i = (WELL_WIDTH * row); i < ((WELL_WIDTH * (row + 1)) -1 ); i++ ) {
+			if(well_data[i] == 1) {
+				wattrset(w1, COLOR_PAIR(1));
+				mvwprintw(w1, y, x, " ");
+			}
+			else {
+				wattrset(w1, COLOR_PAIR(2));
+				mvwprintw(w1, y, x, " ");
+			}	
+		}
+	}*/
+	
+	for(x = 0; x < WELL_WIDTH; x++) {
+		for(y = 0; y < WELL_HEIGHT; y++) {
+			if(*yx2pointer(y, x) == 1) {
+				wattrset(w1, COLOR_PAIR(1));
+				mvwprintw(w1, y, x, " ");
+			}
+			else {
+				wattrset(w1, COLOR_PAIR(2));
+				mvwprintw(w1, y, x, " ");
+			}
+		}
 	}
+	
 	wrefresh(w1);
+}
+
+// Removes the completely filled row from well and increases score
+POINTS remove_row(int row, POINTS score) {
+
+	int i, j, k, x = 0, y = row;
+	/*
+	for(i = (WELL_WIDTH * row); i < ((WELL_WIDTH * (row + 1)) -1 ); i++ )
+		well_data[i] = 0;
+
+	for(i = row - 1; i > 0; i--) {
+		for(j = (WELL_WIDTH * (row - 1)); j < ((WELL_WIDTH * row) - 1 ); j++ )
+			well_data[j + 32] = well_data[j];
+	}*/
+	
+	for(x = 0; x < WELL_WIDTH; x++)
+		*yx2pointer(y, x) = 0;
+	
+	for(i = row - 1; i > 0; i--) {
+		for(x = 0; x < WELL_WIDTH; x++)
+			*yx2pointer(i + 1, x) = *yx2pointer(i, x);
+	}
+	
+	update_well(row);
+}
+
+
+// Checks if a particular row is filled
+int check_row(int row) {
+	int i, j, x = 0, y = row;
+/*
+	for(i = (WELL_WIDTH * row); i < ((WELL_WIDTH * (row + 1)) -1 ); i++ )
+		if(well_data[i] == 0)
+			return 0;
+*/
+	for(x = 0; x < WELL_WIDTH; x++) {
+		if(*yx2pointer(y, x) == 0)
+			return 0;
+	}
+	return 1;
+}
+
+//After fixing each block, checks if any lines are complete
+POINTS check_lines(int start) {
+	
+	int y;
+	POINTS temp;
+	temp.points = 0;
+	temp.lines = 0;
+
+	for (y = start; y < start + 4; y++) {
+		if(check_row(y))
+			temp = remove_row(y, temp);
+		
+	}
 }
 
 
