@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #define WELL_HEIGHT 22
 #define WELL_WIDTH 32
@@ -30,6 +31,7 @@ typedef struct dot {
  */
 char *well_data;
 int delay[NO_LEVELS] = {1000000, 770000, 593000, 457000, 352000, 271000, 208000, 160000, 124000, 95000};
+WINDOW *w1;
 
 //block_data[types][orientations][dots]
 //defining the blocks
@@ -79,15 +81,50 @@ const DOT block_data[7][4][4] =
 	}
 };		
 
+// Converts (y, x) cordinates into pointer to particular location in well_data
+char *yx2pointer(int y, int x)
+{
+	return well_data + (y * WELL_WIDTH) + x;
+}
+
+//Redraws well with the new fixed block
+void update_well(int start, int lines)
+{
+	int y, x;
+	
+	for (y = start; y < (start + lines); y++)	{
+		wmove(w1, y, 0);
+		for (x = 0; x < WELL_WIDTH; x++) {
+			wattrset(w1, COLOR_PAIR(1));
+			mvwprintw(w1, y, 2 * x, "  ");
+		}
+	}
+	wrefresh(w1);
+}
+
+
+// Fixes the block in a particular location in well
+void fix_block(int y, int x, int type,int orient) {
+	int i;
+	DOT dot;
+	for (i = 0; i < 4; i++) {
+		dot = block_data[type][orient][i];
+		*yx2pointer(y + dot.y, x + dot.x) = 1;
+	}
+//	update_well(y, 4);
+}
 
 //checks if the block can be moved to the next location
 int check_pos(int y, int x, int type, int orient) {
 	int i;
+	DOT dot;
 	for(i = 0; i < 4; i++) {
 		dot = block_data[type][orient][i];
 		if ((y + dot.y > WELL_HEIGHT - 1)		||
 		    (x + dot.x < 0) 				||
-		    (x + dot.x > WELL_WIDTH - 1))
+		    (x + dot.x > WELL_WIDTH/2 - 1)		||
+		    ((*yx2pointer(y + dot.y, x + dot.x) > 0))
+		   )
 		        	return 0;
 	}
 	return 1;
@@ -103,12 +140,13 @@ void draw_block(WINDOW *win, int y, int x, int type, int orient, char delete)
 		
 	for (i = 0; i < 4; i++) {
 		dot = block_data[type][orient][i];
-		wattron(win, COLOR_PAIR(delete ? 0 : 1));
-		mvwprintw(win, y + dot.y, x + dot.x, "  ");
+		wattron(win, COLOR_PAIR(delete ? 2 : 1));
+		mvwprintw(win, y + dot.y, 2*(x + dot.x), "  ");
 	}
 	if (delete == 0)
 		wrefresh(win);
 }
+
 
 /* Drops block till it reaches either well floor or another line
  * Uses time variables
@@ -117,15 +155,14 @@ void draw_block(WINDOW *win, int y, int x, int type, int orient, char delete)
 int drop_block(int type, int level) {
 	int mid = WELL_WIDTH / 2 - 2;
 	int y = 0;
-	int x = mid;
+	int x = mid/2;
 	int orient = 0;
 	char ch;
 	fd_set t1, t2;
 	struct timeval timeout;
 	int sel_ret;
-
-	if(0) 				//check if game over
-		return;
+	if (0 == check_pos(y, x, type, orient))			//check if game over
+		return -1;
 
 	timeout.tv_sec = 0;
 	timeout.tv_usec = delay[level];
@@ -155,9 +192,9 @@ int drop_block(int type, int level) {
 				}
 				break;
 			case 'i':							//-----------------------------------rotate
-				if (check_pos(y, x, type,	orient + 1 == BLOCK_ORIENTS? 0 : orient + 1)) {
+				if (check_pos(y, x, type,	orient + 1 == 4 ? 0 : orient + 1)) {
 					draw_block(w1, y, x, type, orient, 1);
-					++orient == BLOCK_ORIENTS? orient = 0 : 0;
+					++orient == 4 ? orient = 0 : 0;
 					draw_block(w1, y, x, type, orient, 0);
 				}
 				break;
@@ -167,11 +204,14 @@ int drop_block(int type, int level) {
 		}
 		
 		if(sel_ret == 0) {
-			if(check_pos(y + 1, x, type, orient))
+			if(check_pos(y + 1, x, type, orient)) {
 				draw_block(w1, y, x, type, orient, 1);
 				draw_block(w1, ++y, x, type, orient, 0);
-			else 
-				fix and return;					//------------------------------- fix block in place
+			}
+			else {							//------------------------------- fix block in place
+				fix_block(y, x, type, orient);
+				return y;
+			}		
 			timeout.tv_sec = 0;
 			timeout.tv_usec = delay[level];
 		}
@@ -182,30 +222,40 @@ int drop_block(int type, int level) {
  * initialises well_data, calls drop_block, sets score
  *
  */
-/*
+
 POINTS play_game(int level) {
 
-	POINTS points;
-	int curr = random() % 7;
+	POINTS points, temp;
+	int i, curr, y;
 
 	well_data = (unsigned char *)malloc(WELL_HEIGHT * WELL_WIDTH);
-	memset(well_data, 0, WELL_HEIGHT * WELL_WIDTH);	
-	update_screen();
-	//wclear(well_win);
+	for(i = 0; i < (WELL_HEIGHT * WELL_WIDTH); i++)
+		well_data[i] = 0;
+//	memset(well_data, 0, WELL_HEIGHT * WELL_WIDTH);	
+//	update_screen();
+	//wclear(w1);
 
 	points.points = 0;
 	points.lines = 0;
 	points.level = 0;
 	
 	while(1) {
+		curr = rand() % 7;
 		y = drop_block(curr, points.level);
-		
+		if(y > 0) {
+			temp = check_lines(y);
+		}
+
+
+	if(y == -1) {delwin( w1 );
+	endwin();}
+			
 	}
-}*/
+}
 
 
 int main() {
-	WINDOW *w1;
+//	WINDOW *w1;
 	int ch, level, play = 1;
 	keypad(w1, TRUE);
 	initscr();
@@ -218,17 +268,17 @@ int main() {
 	wrefresh( w1 );
 start_color();
 init_pair(1, COLOR_BLACK, COLOR_RED);
+init_pair(2, COLOR_BLACK, COLOR_BLACK);
 
-	int y = 2, x = 2, type = 2, orient = 0;
+//	int y = 2, x = 2, type = 2, orient = 0;
 
-/*
+	nodelay(stdscr, TRUE);
 	while (play) {
 		level = 0;
 		play_game(level);
-		play = show_score(points, use_highscore);
+		//play = show_score(points, use_highscore);
 	}
-*/
-//	init_pair(1, COLOR_RED, COLOR_BLACK);
+/*
 	wrefresh( w1 );
 	draw_block(w1, y, x, type, orient, 0);
 	wrefresh( w1 );
@@ -255,6 +305,6 @@ init_pair(1, COLOR_BLACK, COLOR_RED);
 		}
 	wrefresh( w1 );
 	}
-	delwin( w1 );
+*/	delwin( w1 );
 	endwin();
 }
