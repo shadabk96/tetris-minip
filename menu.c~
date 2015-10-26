@@ -1,6 +1,7 @@
 #include <ncurses.h>
 
 #define NITEMS 5
+#define NO_LEVELS	10
 
 void update_inst();
 
@@ -12,7 +13,7 @@ int menu() {
 				"About Developers",
 				"Exit" };
     char item[20];
-    int ch, i = 0, width = 7;
+    int ch, dh, i = 0, width = 7;
  
     initscr(); // initialize Ncurses
     menuw = newwin( 11, 25, 1, 1 ); // create a new window
@@ -53,7 +54,28 @@ int menu() {
                             i = ( i > (NITEMS - 1) ) ? 0 : i;
                             break;
 		case 's' : 	if(i == 0) {
-					return 1;
+					int lvl = 0;
+					miw = newwin( 10, 25, 1, 30 );
+					mvwprintw(miw, 1, 2, "Select Level :");
+					mvwprintw(miw, 7, 2, "Use Up/Down arrow key");
+					mvwprintw(miw, 8, 2, "'d' to select");
+					box(miw, ACS_VLINE, ACS_HLINE);
+					wrefresh(miw);
+					while(( dh = wgetch(miw)) != 'd') {
+						switch( dh ) {
+							case 'k' : lvl--;
+								lvl = (lvl < 0) ? (NO_LEVELS - 1) : lvl;
+								break;
+							case 'i' : lvl++;
+								lvl = ( lvl > (NO_LEVELS - 1) ) ? 0 : lvl;
+								break;
+							case 'd' :
+								return lvl;
+						}
+						mvwprintw(miw, 2, 5, " %d ", lvl);
+						wrefresh(miw);
+					}
+					return lvl;
 				}
 
 				if(i == 1) {
@@ -70,12 +92,14 @@ int menu() {
 				}
 
 				if(i == 2) {
+					miw = newwin( 10, 20, 1, 30 );
 					wclear(miw);
 					mvwprintw(miw, 2,  2, "\"No Highscore\"");
 					wrefresh(miw);
 				}
 				
 				if(i == 3) {
+					miw = newwin( 10, 20, 1, 30 );
 					wclear(miw);
 					mvwprintw(miw, 2,  2, "Head Developer :\n   \"Shadab Khan\"");
 					wrefresh(miw);
@@ -84,7 +108,7 @@ int menu() {
 				if(i == 4) {
 					delwin( menuw );
 					endwin();
-					return 0;
+					return -1;
 				}
 				break;
             }
