@@ -70,14 +70,12 @@ int menu() {
 				}
 
 				if(i == 2) {
-					miw = newwin( 10, 20, 1, 30 );
 					wclear(miw);
 					mvwprintw(miw, 2,  2, "\"No Highscore\"");
 					wrefresh(miw);
 				}
 				
 				if(i == 3) {
-					miw = newwin( 10, 20, 1, 30 );
 					wclear(miw);
 					mvwprintw(miw, 2,  2, "Head Developer :\n   \"Shadab Khan\"");
 					wrefresh(miw);
