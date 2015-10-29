@@ -16,7 +16,7 @@ int menu() {
     int ch, dh, i = 0, width = 7;
  
     initscr(); // initialize Ncurses
-    menuw = newwin( 11, 25, 1, 1 ); // create a new window
+    menuw = newwin( 15, 25, 1, 1 ); // create a new window
     box( menuw, ACS_VLINE, ACS_HLINE ); // sets default borders for the window
      
 // now print all the menu items and highlight the first one
@@ -29,8 +29,10 @@ int menu() {
         mvwprintw( menuw, i+1, 2, "%s", item );
     }
 
-    mvwprintw( menuw, 8, 2, "Press 's' to select " );
-    wrefresh( menuw ); // update the terminal screen
+	mvwprintw( menuw, 11, 2, "'i' -> Up" );
+	mvwprintw( menuw, 12, 2, "'k' -> Down" );
+	mvwprintw( menuw, 13, 2, "Press 's' to select " );
+	wrefresh( menuw ); // update the terminal screen
  
     i = 0;
     noecho(); // disable echoing of characters on the screen
@@ -38,18 +40,18 @@ int menu() {
     curs_set( 0 ); // hide the default screen cursor.
      
        // get the input
-    while(( ch = wgetch(menuw)) != 'q'){ 
+    while(ch = wgetch(menuw)){ 
          
                 // right pad with spaces to make the items appear with even width.
             sprintf(item, "%s",  list[i]); 
             mvwprintw( menuw, i+1, 2, "%s", item ); 
               // use a variable to increment or decrement the value based on the input.
             switch( ch ) {
-                case KEY_UP:
+                case 'i':
                             i--;
                             i = ( i < 0 ) ? (NITEMS - 1) : i;
                             break;
-                case KEY_DOWN:
+                case 'k':
                             i++;
                             i = ( i > (NITEMS - 1) ) ? 0 : i;
                             break;
@@ -57,11 +59,13 @@ int menu() {
 					int lvl = 0;
 					miw = newwin( 10, 25, 1, 30 );
 					mvwprintw(miw, 1, 2, "Select Level :");
-					mvwprintw(miw, 7, 2, "Use Up/Down arrow key");
-					mvwprintw(miw, 8, 2, "'d' to select");
+					mvwprintw(miw, 5, 2, "'i' -> level up");
+					mvwprintw(miw, 6, 2, "'k' -> level down");
+					mvwprintw(miw, 7, 2, "'s' -> select");
+					mvwprintw(miw, 8, 2, "'a' -> go back");
 					box(miw, ACS_VLINE, ACS_HLINE);
 					wrefresh(miw);
-					while(( dh = wgetch(miw)) != 'd') {
+					while( dh = wgetch(miw)) {
 						switch( dh ) {
 							case 'k' : lvl--;
 								lvl = (lvl < 0) ? (NO_LEVELS - 1) : lvl;
@@ -69,13 +73,14 @@ int menu() {
 							case 'i' : lvl++;
 								lvl = ( lvl > (NO_LEVELS - 1) ) ? 0 : lvl;
 								break;
-						//	case 'd' :
-						//		return lvl;
+							case 'a' : 
+								return -2;
+							case 's' :
+								return lvl;
 						}
 						mvwprintw(miw, 2, 5, " %d ", lvl);
 						wrefresh(miw);
 					}
-					return lvl;
 				}
 
 				if(i == 1) {

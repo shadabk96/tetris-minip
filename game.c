@@ -4,13 +4,19 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #define WELL_HEIGHT	22
 #define WELL_WIDTH	32
 #define NO_LEVELS	10
 #define NEXT_HEIGHT	10
 #define NEXT_WIDTH	20
-int GAME_HEIGHT = WELL_HEIGHT + 4, GAME_WIDTH = WELL_WIDTH + NEXT_WIDTH + 4;
+#define SCORE_HEIGHT	14
+#define SCORE_WIDTH	32
+int GAME_HEIGHT = WELL_HEIGHT + 4, GAME_WIDTH = WELL_WIDTH + NEXT_WIDTH + 4 + 20;
 
 /* Points are stored in three parts : points, lines, levels
  *
@@ -29,11 +35,11 @@ typedef struct dot {
 	unsigned char clr;
 } DOT;
 
-typedef struct score{
-	char pname[10];
+typedef struct sc_rec{
+	char pname[11];
 	POINTS points;
-	struct score *next;
-} SCORE;
+	struct sc_rec *next;
+} SC_REC;
 
 
 /* well_data defines the occupancy of well  in terms of a character array.
@@ -41,7 +47,7 @@ typedef struct score{
  */
 char *well_data;
 int delay[NO_LEVELS] = {1000000, 770000, 593000, 457000, 352000, 271000, 208000, 160000, 124000, 95000};
-WINDOW *gamew, *wellw, *statw, *nextw, *instw, *lastw;
+WINDOW *gamew, *wellw, *statw, *nextw, *instw, *lastw, *scorew;
 
 
 /* block_data[types][orientations][dots]
@@ -283,7 +289,7 @@ int drop_block(int type, int level) {
 	int x = mid/2;
 	int orient = 0;
 	int pause = 0;
-	char ch;
+	char ch, dh;
 	fd_set t1, t2;
 	struct timeval timeout;
 	int sel_ret;
@@ -330,6 +336,22 @@ int drop_block(int type, int level) {
 				sel_ret = 0;
 				break;
 
+			case 'p':
+				{
+					lastw = newwin(10, 20, WELL_HEIGHT - 10, WELL_WIDTH + NEXT_WIDTH + 4);
+					wattrset(lastw, COLOR_PAIR(2));
+					box(lastw, ' ', ' ');
+					wattroff(lastw, COLOR_PAIR(2));
+					mvwprintw(lastw, 1, 2, ".. Game Paused ..");
+					mvwprintw(lastw, 3, 3, "Press 'p'");
+					mvwprintw(lastw, 4, 3, "to continue");
+					wrefresh(lastw);
+				}
+				while((dh = wgetch(wellw)) != 'p');
+				delwin(lastw);
+				update_inst();
+				break;
+
 			case 'v':		//-----------------------------------------------------------------------------quit
 				return -1;
 		}
@@ -350,29 +372,243 @@ int drop_block(int type, int level) {
 }
 
 
-/* Reads score, compares arg score with stored score
- * Returns 1, if arg score can be stored
+/* Displays the score from highscores.txt file
+ * Can be called anytime
+ */
+void disp_score() {
+	char ch, str[15];
+	wclear(gamew);
+	POINTS points;
+	scorew = newwin(GAME_HEIGHT - 2, GAME_WIDTH, 0, 0);
+	box(scorew, ACS_VLINE, ACS_HLINE);
+	wrefresh(scorew);
+	
+	FILE *fp;
+	fp = fopen("highscores.txt", "r");
+	if(fp == NULL) {
+		mvwprintw(scorew, 10, 10, "Highscores file not found.");
+		wrefresh(scorew);
+		ch = getch();
+		return;
+	}
+	
+	wattrset(scorew, COLOR_PAIR(14));
+	mvwprintw(scorew, 2, 25, "## Highscores ##");
+	wattroff(scorew, COLOR_PAIR(14));
+	mvwprintw(scorew, 4, 10, "Player Name");
+	mvwprintw(scorew, 4, 27, "Points");
+	mvwprintw(scorew, 4, 37, "Lines");
+	mvwprintw(scorew, 4, 47, "Level");
+	mvwprintw(scorew, 6, 7, "1.");
+
+	int i = 10, j = 6, rank = 2;
+	while((ch = fgetc(fp)) != EOF) {
+		if(ch == '\t') {
+			i = (((i + 10) / 10 ) * 10);
+			continue;
+		}
+		if(ch == '\n') {
+			i = 10;
+			j++;
+			mvwprintw(scorew, j, 7, "%d.", rank++);	
+			continue;
+		}		
+		mvwprintw(scorew, j, i, "%c", ch);
+		i++;
+		wrefresh(scorew);
+	}
+
+	ch = getch();
+	nodelay(stdscr, TRUE);
+}
+
+
+/* Reads score, compares arg score with stored scores
+ * Returns 1, if arg score can be stored and stores it
  * Return 0, if arg score is too low
  */
-/*int read_score(POINTS points) {
-	FILES *fp;
-	fp = fopen("highscores.txt", "w");
-	SCORE *table;
-	table = (SCORE *)malloc(sizeof(SCORE));
-	
+int store_score(POINTS argp) {/*
+open highscores.txt
+read the stored table
+store read info in a data table
+if(no. of scores saved < 10)
+	store score
+	closes file
+	return 1
+if(no. of scores saved > 10)
+	compares score
+	if possible
+		store score
+		closes file
+		return 1
+	else
+		closes file
 
+typedef struct sc_rec{
+	char pname[11];
+	POINTS points;
+	struct sc_rec *next;
+} SC_REC;
+*/
+	char ch, tempno[10];
+char name[11];
+	int i, rows = 0;
+	SC_REC *score, *head, *prev;
+	head = NULL;
+	prev = NULL;
+	FILE *fp;
+	fp = fopen("highscores.txt", "r");
+	if(fp != NULL)
+		{
+
+//	ch = fgetc(fp);
+	while((ch = fgetc(fp)) != EOF) {
+		score = (SC_REC *)malloc(sizeof(SC_REC));
+	/*	for(i = 0; i < 10; i++) 
+			score->pname[i] = ' ';		
+	*/	score->next = NULL;
+		if(head == NULL)
+			head = score;		
+		if(prev != NULL)
+			prev->next = score;
+		i = 0;
+		while(ch != '\t') {		
+			score->pname[i] = ch;
+//name[i] = ch;
+			ch = fgetc(fp);
+			i++;
+		}
+
+//name[10] = '\0';
+//strcpy(score->pname, name);
+//score->pname[1] = name[1];
+		(score->pname)[10] = '\0';
+		i = 0;
+		ch = fgetc(fp);
+		while(ch != '\t') {
+			tempno[i++] = ch;
+			ch = fgetc(fp);			
+		}
+		tempno[i] = '\0';
+		(score->points).points = atoi(tempno);
+		i = 0;
+		ch = fgetc(fp);
+		while(ch != '\t') {
+			tempno[i++] = ch;
+			ch = fgetc(fp);		
+		}
+		tempno[i] = '\0';
+		(score->points).lines = atoi(tempno);
+		i = 0;
+		ch = fgetc(fp);
+		while((ch != '\n') && (ch != EOF)) {
+			tempno[i++] = ch;
+			ch = fgetc(fp);			
+		}
+		tempno[i] = '\0';
+		(score->points).level = atoi(tempno);
+		prev = score;
+		rows++;
+	}
 	fclose(fp);
-}*/
+}
+	rows = 0;
+	SC_REC *temp, new;
+	temp = head;
+	while(temp) {
+		if(temp->points.points > argp.points) {
+			prev = temp;
+			rows++;
+		}
+		temp = temp->next;
+	}
+	if(rows == 9)
+		return 0;
+
+///////////////////////////////////////////////
+	strcpy(new.pname, "test");
+
+	scorew = newwin(GAME_HEIGHT - 2, GAME_WIDTH, 0, 0);
+	box(scorew, ACS_VLINE, ACS_HLINE);
+	wrefresh(scorew);
+
+	mvwprintw(scorew, 10, 20,"Please enter your name : [");
+	mvwprintw(scorew, 10, 20 + 10 + strlen("Please enter your name : ["),"]");
+	wrefresh(scorew);
+	nodelay(stdscr, FALSE);
+	int letter_count = 0;
+	char tempname[11];
+	for(i = 0; i < 10; i++)
+		tempname[i] = ' ';
+	tempname[10] = '\0';
+	do {
+		ch = wgetch(scorew);
+		mvwprintw(scorew, 10, 21 + letter_count + strlen("Please enter your name : ["),"%c", ch);
+		tempname[letter_count] = ch;
+		letter_count++;
+		wrefresh(scorew);
+	}
+	while((ch != '+') && (letter_count != 10));
+	if(ch == '+')
+		tempname[letter_count - 1] = ' ';
+	strcpy(new.pname, tempname);
+
+///////////////////////////////////////////////
+	new.points.points = argp.points;
+	new.points.lines = argp.lines;
+	new.points.level = argp.level;
+
+	if(rows == 0) {
+		new.next = head;
+		head = &new;
+	}
+	else {
+		new.next = prev->next;
+		prev->next = &new;
+	}
+///////////////////////////////////
+rows = 0;
+temp = head;
+while(temp->next) {
+	prev = temp;
+	temp = temp->next;
+	rows++;
+}
+if(rows == 10)
+	prev->next = NULL;
+free(temp);
+
+///////////////////////////////////
+
+
+	temp = head;
+	fp = fopen("highscores.txt", "wr+");
+	while(temp) {
+	fprintf(fp, "%s", temp->pname);
+	fprintf(fp, "\t");
+	fprintf(fp, "%d", temp->points.points);
+	fprintf(fp, "\t");
+	fprintf(fp, "%d", temp->points.lines);
+	fprintf(fp, "\t");
+	fprintf(fp, "%d", temp->points.level);
+	fprintf(fp, "\n");
+	
+	temp = temp->next;
+	}
+	fclose(fp);
+
+		return 1;
+}
 
 
 /* Actual loop of the game.
  * initialises well_data, calls drop_block, sets score
  *
  */
-POINTS play_game(int level) {
+void play_game(int level) {
 
 	POINTS points, *temp;
-	int i, curr, next, y, count_lines_rem = 0;
+	int i, curr, next, y, count_lines_rem;
 	char ch;
 
 	well_data = (unsigned char *)malloc(WELL_HEIGHT * WELL_WIDTH);
@@ -384,6 +620,7 @@ POINTS play_game(int level) {
 	points.level = level;
 	
 	temp = &points;
+	count_lines_rem = level * 3;
 
 	curr = rand() % 7;
 
@@ -408,10 +645,11 @@ POINTS play_game(int level) {
 
 		if(y == -1) {
 			lastw = newwin(10, 20, 8, 35);
-			wattrset(lastw, COLOR_PAIR(2));
-			box(lastw, ACS_VLINE, ACS_HLINE);
-			wattroff(lastw, COLOR_PAIR(2));
-			mvwprintw(lastw, 1, 2, "# Your Score #");
+			wattrset(lastw, COLOR_PAIR(4));
+			box(lastw, ' ', ' ');
+			wattroff(lastw, COLOR_PAIR(4));
+			mvwprintw(lastw, 1, 2, "# Game Over #");
+			mvwprintw(lastw, 2, 2, "<- Your Score ->");
 			mvwprintw(lastw, 3, 4, "Score : %d", points.points);
 			mvwprintw(lastw, 4, 4, "Lines : %d", points.lines);
 			mvwprintw(lastw, 5, 4, "Level : %d", points.level);
@@ -424,11 +662,21 @@ POINTS play_game(int level) {
 				endwin();
 			}
 			else if(ch == 'y') {
-		//		if(read_score(points));
+				if(store_score(points))
+					disp_score();
+				else {
+			//		wattrset(lastw, COLOR_PAIR(5));
+					mvwprintw(lastw, 7, 1, "Your score is not");
+					mvwprintw(lastw, 8, 2, "in the Top 10");
+			//		wattroff(lastw, COLOR_PAIR(5));
+					wrefresh(lastw);
+					ch = getch();
+					disp_score();
+				}
 			}
 		}	
 	}
-	return points;
+	return;
 }
 
 
@@ -456,12 +704,19 @@ void initialise_colors() {
 	start_color();
 	init_pair(9, COLOR_BLACK, COLOR_BLACK);
 	init_pair(1, COLOR_BLACK, COLOR_RED);
+	init_pair(11, COLOR_RED, COLOR_BLACK);
 	init_pair(2, COLOR_BLACK, COLOR_CYAN);
+	init_pair(12, COLOR_CYAN, COLOR_BLACK);
 	init_pair(3, COLOR_BLACK, COLOR_BLUE);
+	init_pair(13, COLOR_BLUE, COLOR_BLACK);
 	init_pair(4, COLOR_BLACK, COLOR_YELLOW);
+	init_pair(14, COLOR_YELLOW, COLOR_BLACK);
 	init_pair(5, COLOR_BLACK, COLOR_WHITE);
+	init_pair(15, COLOR_WHITE, COLOR_BLACK);
 	init_pair(6, COLOR_BLACK, COLOR_GREEN);
+	init_pair(16, COLOR_GREEN, COLOR_BLACK);
 	init_pair(7, COLOR_BLACK, COLOR_MAGENTA);
+	init_pair(17, COLOR_MAGENTA, COLOR_BLACK);
 }
 
 int main() {
@@ -476,6 +731,8 @@ int main() {
 		if(play == -1) {delwin( gamew );
 			endwin();
 			return 0;}
+		if(play == -2)
+			continue;
 		init_windows();
 	
 		nodelay(stdscr, TRUE);
