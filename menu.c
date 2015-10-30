@@ -1,12 +1,33 @@
 #include <ncurses.h>
-
-#define NITEMS 5
-#define NO_LEVELS	10
+#include "alldefine.h"
 
 void update_inst();
 
+WINDOW *menuw, *miw;
+
+void print_menu(WINDOW *menuw) {
+	int i;
+	char item[20];
+char list[NITEMS][20] = {	"New Game",
+				"Instructions",
+				"High Scores",
+				"About Developers",
+				"Exit" };
+//	menuw = newwin( 15, 25, 1, 1 ); // create a new window
+	box( menuw, ACS_VLINE, ACS_HLINE ); // sets default borders for the window
+     
+	// now print all the menu items and highlight the first one
+	for( i = 0; i < NITEMS; i++ ) {
+		sprintf(item, "%s",  list[i]);
+		mvwprintw( menuw, i+1, 2, "%s", item );
+	}
+
+	mvwprintw( menuw, 11, 2, "'%c' -> Up", CONTROL_UP);
+	mvwprintw( menuw, 12, 2, "'%c' -> Down", CONTROL_DOWN);
+	mvwprintw( menuw, 13, 2, "Press '%c' to select ",CONTROL_NEXT );
+	wrefresh( menuw ); // update the terminal screen 
+}
 int menu() {     
-    WINDOW *menuw, *miw;
     char list[NITEMS][20] = { 	"New Game",
 				"Instructions",
 				"High Scores",
@@ -29,9 +50,9 @@ int menu() {
         mvwprintw( menuw, i+1, 2, "%s", item );
     }
 
-	mvwprintw( menuw, 11, 2, "'i' -> Up" );
-	mvwprintw( menuw, 12, 2, "'k' -> Down" );
-	mvwprintw( menuw, 13, 2, "Press 's' to select " );
+	mvwprintw( menuw, 11, 2, "'%c' -> Up", CONTROL_UP);
+	mvwprintw( menuw, 12, 2, "'%c' -> Down", CONTROL_DOWN);
+	mvwprintw( menuw, 13, 2, "Press '%c' to select ", CONTROL_NEXT);
 	wrefresh( menuw ); // update the terminal screen
  
     i = 0;
@@ -47,36 +68,36 @@ int menu() {
             mvwprintw( menuw, i+1, 2, "%s", item ); 
               // use a variable to increment or decrement the value based on the input.
             switch( ch ) {
-                case 'i':
+                case CONTROL_UP:
                             i--;
                             i = ( i < 0 ) ? (NITEMS - 1) : i;
                             break;
-                case 'k':
+                case CONTROL_DOWN:
                             i++;
                             i = ( i > (NITEMS - 1) ) ? 0 : i;
                             break;
-		case 's' : 	if(i == 0) {
-					int lvl = 0;
-					miw = newwin( 10, 25, 1, 30 );
-					mvwprintw(miw, 1, 2, "Select Level :");
-					mvwprintw(miw, 5, 2, "'i' -> level up");
-					mvwprintw(miw, 6, 2, "'k' -> level down");
-					mvwprintw(miw, 7, 2, "'s' -> select");
-					mvwprintw(miw, 8, 2, "'a' -> go back");
-					box(miw, ACS_VLINE, ACS_HLINE);
-					wrefresh(miw);
-					while( dh = wgetch(miw)) {
-						switch( dh ) {
-							case 'k' : lvl--;
-								lvl = (lvl < 0) ? (NO_LEVELS - 1) : lvl;
-								break;
-							case 'i' : lvl++;
-								lvl = ( lvl > (NO_LEVELS - 1) ) ? 0 : lvl;
-								break;
-							case 'a' : 
-								return -2;
-							case 's' :
-								return lvl;
+		case CONTROL_NEXT : 	if(i == 0) {
+						int lvl = 0;
+						miw = newwin( 10, 25, 1, 30 );
+						mvwprintw(miw, 1, 2, "Select Level :");
+						mvwprintw(miw, 5, 2, "'%c' -> level up", CONTROL_UP);
+						mvwprintw(miw, 6, 2, "'%c' -> level down", CONTROL_DOWN);
+						mvwprintw(miw, 7, 2, "'%c' -> select", CONTROL_NEXT);
+						mvwprintw(miw, 8, 2, "'%c' -> go back", CONTROL_BACK);
+						box(miw, ACS_VLINE, ACS_HLINE);
+						wrefresh(miw);
+						while( dh = wgetch(miw)) {
+							switch( dh ) {
+								case CONTROL_DOWN : lvl--;
+									lvl = (lvl < 0) ? (NO_LEVELS - 1) : lvl;
+									break;
+								case CONTROL_UP : lvl++;
+									lvl = ( lvl > (NO_LEVELS - 1) ) ? 0 : lvl;
+									break;
+								case CONTROL_BACK : 
+									return -2;
+								case CONTROL_NEXT :
+									return lvl;
 						}
 						mvwprintw(miw, 2, 5, " %d ", lvl);
 						wrefresh(miw);
@@ -97,10 +118,15 @@ int menu() {
 				}
 
 				if(i == 2) {
-					miw = newwin( 10, 20, 1, 30 );
+				/*	miw = newwin( 10, 20, 1, 30 );
 					wclear(miw);
 					mvwprintw(miw, 2,  2, "\"No Highscore\"");
 					wrefresh(miw);
+				*/
+				disp_score();
+					clear();
+					refresh();
+					print_menu(menuw);
 				}
 				
 				if(i == 3) {
