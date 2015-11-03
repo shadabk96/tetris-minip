@@ -15,3 +15,48 @@
 
 #define NITEMS		5
 #define NO_LEVELS	10
+
+/* Points are stored in three parts : points, lines, levels.
+ * DOT is the structure defining the blocks : (y, x) coordinates, colour. 
+ * SC_REC is the record of a score row : player_name, POINTS, next row pointer.
+ */
+typedef struct points {
+	unsigned int points;
+	unsigned int lines;
+	unsigned int level;
+} POINTS;
+
+
+typedef struct dot {
+	unsigned char y;
+	unsigned char x;
+	unsigned char clr;
+} DOT;
+
+typedef struct sc_rec{
+	char pname[11];
+	POINTS points;
+	struct sc_rec *next;
+} SC_REC;
+
+
+// Prototypes of all the functions used in the complete code :
+void print_menu(WINDOW *menuw);
+int menu();
+char *yx2pointer(int y, int x);
+void update_stat(POINTS points);
+void update_inst();
+void update_well(int row);
+void remove_row(int row);
+int check_row(int row);
+POINTS *check_lines(int start);
+void fix_block(int y, int x, int type,int orient);
+int check_pos(int y, int x, int type, int orient);
+void draw_block(WINDOW *win, int y, int x, int type, int orient, char delete);
+void update_next(int next, int del);
+int drop_block(int type, int level);
+void disp_score();
+int store_score(POINTS argp);
+void play_game(int level);
+void init_windows();
+void initialise_colors();

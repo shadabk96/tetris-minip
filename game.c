@@ -12,41 +12,26 @@
 
 int GAME_HEIGHT = WELL_HEIGHT + 4, GAME_WIDTH = WELL_WIDTH + NEXT_WIDTH + 4 + 20;
 
-/* Points are stored in three parts : points, lines, levels
- *
- * DOT is the structure defining the blocks
- */
-typedef struct points {
-	unsigned int points;
-	unsigned int lines;
-	unsigned int level;
-} POINTS;
-
-
-typedef struct dot {
-	unsigned char y;
-	unsigned char x;
-	unsigned char clr;
-} DOT;
-
-typedef struct sc_rec{
-	char pname[11];
-	POINTS points;
-	struct sc_rec *next;
-} SC_REC;
-
-
-/* well_data defines the occupancy of well  in terms of a character array.
- * delay[] is the time delay in microseconds depending on the level no.
- */
+// well_data defines the occupancy of well  in terms of a character array.
 char *well_data;
+
+//delay[] is the time delay in microseconds depending on the level no.
 int delay[NO_LEVELS] = {1000000, 770000, 593000, 457000, 352000, 271000, 208000, 160000, 124000, 95000};
+
+/* Defined all global windows : 1. Game window		: gamew
+ * 				2. Well window		: wellw
+ *				3. Stats window		: statw
+ * 				4. Next window		: nextw
+ *				5. Instructions window	: instw
+ *				6. Last Window		: lastw
+ *				7. Highscores Window	: scorew
+ */
 WINDOW *gamew, *wellw, *statw, *nextw, *instw, *lastw, *scorew;
 
 
 /* block_data[types][orientations][dots]
- * defining the blocks
- * (y, x)
+ * defining the blocks :
+ *		(y, x, color no.)
  */
 const DOT block_data[7][4][4] =
 {
@@ -659,7 +644,7 @@ void play_game(int level) {
 }
 
 
-//initiliases the windows for the first time
+// Initiliases the windows for the first time :
 void init_windows() {
 	POINTS points;
 	points.points = 0;
@@ -679,6 +664,7 @@ void init_windows() {
 	wrefresh( statw );
 }
 
+// All colour definitions are defined here :
 void initialise_colors() {
 	start_color();
 	init_pair(9, COLOR_BLACK, COLOR_BLACK);
@@ -698,6 +684,7 @@ void initialise_colors() {
 	init_pair(17, COLOR_MAGENTA, COLOR_BLACK);
 }
 
+// The main function :
 int main() {
 	int ch, level;
 	keypad(gamew, TRUE);

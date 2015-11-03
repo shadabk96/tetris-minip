@@ -1,8 +1,6 @@
 #include <ncurses.h>
 #include "alldefine.h"
 
-void update_inst();
-
 WINDOW *menuw, *miw;
 
 void print_menu(WINDOW *menuw) {
@@ -132,7 +130,7 @@ int menu() {
 				if(i == 3) {
 					miw = newwin( 10, 20, 1, 30 );
 					wclear(miw);
-					mvwprintw(miw, 2,  2, "Head Developer :\n   \"Shadab Khan\"");
+					mvwprintw(miw, 2,  2, "  A game by :\n   \"Shadab Khan\"");
 					wrefresh(miw);
 				}
 
