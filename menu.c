@@ -7,6 +7,7 @@ void print_menu(WINDOW *menuw) {
 	int i;
 	char item[20];
 char list[NITEMS][20] = {	"New Game",
+				"Load Game",
 				"Instructions",
 				"High Scores",
 				"About Developers",
@@ -27,6 +28,7 @@ char list[NITEMS][20] = {	"New Game",
 }
 int menu() {     
     char list[NITEMS][20] = { 	"New Game",
+				"Load Game",
 				"Instructions",
 				"High Scores",
 				"About Developers",
@@ -101,8 +103,12 @@ int menu() {
 						wrefresh(miw);
 					}
 				}
-
+	
 				if(i == 1) {
+					return -3;
+				}
+
+				if(i == 2) {
 					miw = newwin( 10, 20, 1, 30 );
 					mvwprintw(miw, 1, 2, "Controls :");
 					mvwprintw(miw, 3, 2, "Move Left -> j");
@@ -115,7 +121,7 @@ int menu() {
 					wrefresh(miw);
 				}
 
-				if(i == 2) {
+				if(i == 3) {
 				/*	miw = newwin( 10, 20, 1, 30 );
 					wclear(miw);
 					mvwprintw(miw, 2,  2, "\"No Highscore\"");
@@ -127,14 +133,14 @@ int menu() {
 					print_menu(menuw);
 				}
 				
-				if(i == 3) {
+				if(i == 4) {
 					miw = newwin( 10, 20, 1, 30 );
 					wclear(miw);
 					mvwprintw(miw, 2,  2, "  A game by :\n   \"Shadab Khan\"");
 					wrefresh(miw);
 				}
 
-				if(i == 4) {
+				if(i == 5) {
 					delwin( menuw );
 					endwin();
 					return -1;

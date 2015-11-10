@@ -13,7 +13,7 @@
 #define CONTROL_NEXT	's'
 #define CONTROL_BACK	'a'
 
-#define NITEMS		5
+#define NITEMS		6
 #define NO_LEVELS	10
 
 /* Points are stored in three parts : points, lines, levels.
@@ -46,7 +46,7 @@ int menu();
 char *yx2pointer(int y, int x);
 void update_stat(POINTS points);
 void update_inst();
-void update_well(int row);
+void update_well();
 void remove_row(int row);
 int check_row(int row);
 POINTS *check_lines(int start);
@@ -55,8 +55,8 @@ int check_pos(int y, int x, int type, int orient);
 void draw_block(WINDOW *win, int y, int x, int type, int orient, char delete);
 void update_next(int next, int del);
 int drop_block(int type, int level);
-void disp_score();
+void disp_score(char *message);
 int store_score(POINTS argp);
-void play_game(int level);
+void play_game(int level, int y);
 void init_windows();
 void initialise_colors();

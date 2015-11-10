@@ -1,3 +1,22 @@
+
+/*****************************************************************************
+ * Copyright (C) Shadab Khan shadabk14.comp@coep.ac.in
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+ *****************************************************************************/
+
 #include <stdio.h>
 #include <ncurses.h>
 #include <sys/time.h>
@@ -85,6 +104,25 @@ char *yx2pointer(int y, int x) {
 	return well_data + (y * WELL_WIDTH) + x;
 }
 
+// All colour definitions are defined here :
+void initialise_colors() {
+	start_color();
+	init_pair(9, COLOR_BLACK, COLOR_BLACK);
+	init_pair(1, COLOR_BLACK, COLOR_RED);
+	init_pair(11, COLOR_RED, COLOR_BLACK);
+	init_pair(2, COLOR_BLACK, COLOR_CYAN);
+	init_pair(12, COLOR_CYAN, COLOR_BLACK);
+	init_pair(3, COLOR_BLACK, COLOR_BLUE);
+	init_pair(13, COLOR_BLUE, COLOR_BLACK);
+	init_pair(4, COLOR_BLACK, COLOR_YELLOW);
+	init_pair(14, COLOR_YELLOW, COLOR_BLACK);
+	init_pair(5, COLOR_BLACK, COLOR_WHITE);
+	init_pair(15, COLOR_WHITE, COLOR_BLACK);
+	init_pair(6, COLOR_BLACK, COLOR_GREEN);
+	init_pair(16, COLOR_GREEN, COLOR_BLACK);
+	init_pair(7, COLOR_BLACK, COLOR_MAGENTA);
+	init_pair(17, COLOR_MAGENTA, COLOR_BLACK);
+}
 
 //Redraws stat window
 void update_stat(POINTS points) {
@@ -112,7 +150,7 @@ void update_inst() {
 
 
 //Redraws well
-void update_well(int row) {
+void update_well() {
 	int y = 0, x = 0, i;
 	for(x = 0; x < WELL_WIDTH; x++) {
 		for(y = 0; y < WELL_HEIGHT; y++) {
@@ -144,7 +182,7 @@ void remove_row(int row) {
 			*yx2pointer(i + 1, x) = *yx2pointer(i, x);
 	}
 	
-	update_well(row);
+	update_well();
 }
 
 
@@ -257,6 +295,44 @@ void update_next(int next, int del) {
 
 }
 
+void savegame(POINTS points, int curr, int next) {
+	FILE *fp;
+	int i;	
+	char ch;
+	fp = fopen("savefile.txt", "w");
+	for(i = 0; i < (WELL_WIDTH * WELL_HEIGHT); i++) {
+		ch = well_data[i];
+		fputc(ch, fp);
+	}
+	ch = '\n';
+	fputc(ch, fp);
+	fprintf(fp, "%d\n", points.points);
+	fprintf(fp, "%d\n", points.lines);
+	fprintf(fp, "%d\n", points.level);
+	fprintf(fp, "%d\n", curr);
+	fprintf(fp, "%d\n", next);
+	fclose(fp);
+}
+
+POINTS *loadgame(int *curr, int *next) {
+	FILE * fp;
+	int i;
+	char ch;
+	POINTS *temp;
+	temp = (POINTS *)malloc(sizeof(POINTS));
+	fp = fopen("savefile.txt", "r");
+	if(fp == NULL)
+		temp->points = -1;
+	else {
+		for(i = 0; i < (WELL_WIDTH * WELL_HEIGHT); i++) {
+			well_data[i] = fgetc(fp);
+		}
+		fgetc(fp);
+		fscanf(fp, "%d%d%d%d%d", &(temp->points), &(temp->lines), &(temp->level), curr, next);
+	}
+	return temp;
+}
+
 
 /* Drops block till it reaches either well floor or another line
  * Uses time variables
@@ -324,9 +400,21 @@ int drop_block(int type, int level) {
 					mvwprintw(lastw, 1, 2, ".. Game Paused ..");
 					mvwprintw(lastw, 3, 3, "Press 'p'");
 					mvwprintw(lastw, 4, 3, "to continue");
+					mvwprintw(lastw, 5, 3, "Press 's'");
+					mvwprintw(lastw, 6, 3, "to save game");
+					mvwprintw(lastw, 7, 3, "Press 'l'");
+					mvwprintw(lastw, 8, 3, "to load game");
 					wrefresh(lastw);
+					dh = wgetch(wellw);
+					if(dh == 's') {
+						delwin(lastw);
+						return -2;
+					} 
+					if(dh == 'l') {
+						return -3;
+					}
 				}
-				while((dh = wgetch(wellw)) != 'p');
+				while(dh != 'p');
 				delwin(lastw);
 				update_inst();
 				break;
@@ -354,14 +442,20 @@ int drop_block(int type, int level) {
 /* Displays the score from highscores.txt file
  * Can be called anytime.
  */
-void disp_score() {
+void disp_score(char *message) {
 	char ch, str[15];
 	wclear(gamew);
 	POINTS points;
 	scorew = newwin(GAME_HEIGHT - 2, GAME_WIDTH, 0, 0);
 	box(scorew, ACS_VLINE, ACS_HLINE);
 	wrefresh(scorew);
-	
+
+
+	if(message != NULL) {
+	wattrset(scorew, COLOR_PAIR(11));
+		mvwprintw(scorew, 17 , 15, "## %s ##", message);
+	wattroff(scorew, COLOR_PAIR(11));
+}
 	FILE *fp;
 	fp = fopen("highscores.txt", "r");
 	if(fp == NULL) {
@@ -396,7 +490,6 @@ void disp_score() {
 		i++;
 		wrefresh(scorew);
 	}
-
 	ch = getch();
 	nodelay(stdscr, TRUE);
 }
@@ -566,10 +659,10 @@ if(fp != NULL) {
  * initialises well_data, calls drop_block, sets score
  *
  */
-void play_game(int level) {
+void play_game(int level, int y) {
 
 	POINTS points, tpts, *temp;
-	int i, curr, next, y, count_lines_rem;
+	int i, curr, next, count_lines_rem;
 	char ch;
 
 	well_data = (unsigned char *)malloc(WELL_HEIGHT * WELL_WIDTH);
@@ -587,13 +680,35 @@ void play_game(int level) {
 
 	update_stat(points);
 	
-	while(y != -1) {
+	while(y > 0 || y == -3) {
 		temp->points = 0;
 		temp->lines = 0;
 		update_next(curr, 1);
 		next = rand() % 7;
+		if(y == -3) {
+			temp = loadgame(&curr, &next);
+			if(temp->points == -1) {
+				char message[] = "No Savefile Found";
+				nodelay(stdscr, FALSE);
+				disp_score(message);
+				delwin(wellw);
+				endwin();
+				return;
+			}
+			update_well();
+			points.points = temp->points;
+			points.lines = temp->lines;
+			points.level = temp->level;
+			update_stat(points);
+		}
 		update_next(next, 0);
 		y = drop_block(curr, points.level);
+	
+		if(y == -2) {
+			savegame(points, curr, next);
+			return;
+		}
+	
 		if(y > 0) 
 			temp = check_lines(y);
 		if(temp->points > 0) {
@@ -621,13 +736,13 @@ void play_game(int level) {
 			nodelay(stdscr, FALSE);
 			ch = getch();
 			if(ch == 'n') {
-				disp_score();
+				disp_score(NULL);
 				delwin(wellw);
 				endwin();
 			}
 			else if(ch == 'y') {
 				if(store_score(points))
-					disp_score();
+					disp_score(NULL);
 				else {
 					wattrset(lastw, COLOR_PAIR(15));
 					mvwprintw(lastw, 7, 1, "Your score is not");
@@ -635,10 +750,10 @@ void play_game(int level) {
 					wattroff(lastw, COLOR_PAIR(15));
 					wrefresh(lastw);
 					ch = getch();
-					disp_score();
+					disp_score(NULL);
 				}
 			}
-		}	
+		}
 	}
 	return;
 }
@@ -664,32 +779,13 @@ void init_windows() {
 	wrefresh( statw );
 }
 
-// All colour definitions are defined here :
-void initialise_colors() {
-	start_color();
-	init_pair(9, COLOR_BLACK, COLOR_BLACK);
-	init_pair(1, COLOR_BLACK, COLOR_RED);
-	init_pair(11, COLOR_RED, COLOR_BLACK);
-	init_pair(2, COLOR_BLACK, COLOR_CYAN);
-	init_pair(12, COLOR_CYAN, COLOR_BLACK);
-	init_pair(3, COLOR_BLACK, COLOR_BLUE);
-	init_pair(13, COLOR_BLUE, COLOR_BLACK);
-	init_pair(4, COLOR_BLACK, COLOR_YELLOW);
-	init_pair(14, COLOR_YELLOW, COLOR_BLACK);
-	init_pair(5, COLOR_BLACK, COLOR_WHITE);
-	init_pair(15, COLOR_WHITE, COLOR_BLACK);
-	init_pair(6, COLOR_BLACK, COLOR_GREEN);
-	init_pair(16, COLOR_GREEN, COLOR_BLACK);
-	init_pair(7, COLOR_BLACK, COLOR_MAGENTA);
-	init_pair(17, COLOR_MAGENTA, COLOR_BLACK);
-}
-
 // The main function :
 int main() {
-	int ch, level;
+	int ch, level, y;
 	keypad(gamew, TRUE);
 	initscr();
 	while(1) {
+		y = 1;
 		initialise_colors();
 		bkgd(COLOR_PAIR(9));
 		refresh();
@@ -700,10 +796,14 @@ int main() {
 		if(play == -2)
 			continue;
 		init_windows();
-	
+		if(play == -3) {
+			y = -3;
+			level = 0;
+		}
+		else 
+			level = play;
 		nodelay(stdscr, TRUE);
-		level = play;
-		play_game(level);
+		play_game(level, y);
 		
 		clear();
 		refresh();
