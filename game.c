@@ -443,6 +443,7 @@ int drop_block(int type, int level) {
  * Can be called anytime.
  */
 void disp_score(char *message) {
+	nodelay(stdscr, FALSE);
 	char ch, str[15];
 	wclear(gamew);
 	POINTS points;
@@ -452,10 +453,10 @@ void disp_score(char *message) {
 
 
 	if(message != NULL) {
-	wattrset(scorew, COLOR_PAIR(11));
+		wattrset(scorew, COLOR_PAIR(11));
 		mvwprintw(scorew, 17 , 15, "## %s ##", message);
-	wattroff(scorew, COLOR_PAIR(11));
-}
+		wattroff(scorew, COLOR_PAIR(11));
+	}
 	FILE *fp;
 	fp = fopen("highscores.txt", "r");
 	if(fp == NULL) {
@@ -466,7 +467,8 @@ void disp_score(char *message) {
 	}
 	
 	wattrset(scorew, COLOR_PAIR(14));
-	mvwprintw(scorew, 2, 25, "## Highscores ##");
+	mvwprintw(scorew, 2, 23, "## Highscores ##");	
+	mvwprintw(scorew, 19, 17, "## Press any key to exit ##");
 	wattroff(scorew, COLOR_PAIR(14));
 	mvwprintw(scorew, 4, 10, "Player Name");
 	mvwprintw(scorew, 4, 27, "Points");
@@ -689,7 +691,6 @@ void play_game(int level, int y) {
 			temp = loadgame(&curr, &next);
 			if(temp->points == -1) {
 				char message[] = "No Savefile Found";
-				nodelay(stdscr, FALSE);
 				disp_score(message);
 				delwin(wellw);
 				endwin();
