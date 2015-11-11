@@ -32,7 +32,7 @@
 int GAME_HEIGHT = WELL_HEIGHT + 4, GAME_WIDTH = WELL_WIDTH + NEXT_WIDTH + 4 + 20;
 
 // well_data defines the occupancy of well  in terms of a character array.
-char *well_data;
+char **well_data;
 
 //delay[] is the time delay in microseconds depending on the level no.
 int delay[NO_LEVELS] = {1000000, 770000, 593000, 457000, 352000, 271000, 208000, 160000, 124000, 95000};
@@ -101,7 +101,7 @@ const DOT block_data[7][4][4] =
 
 // Converts (y, x) cordinates into pointer to particular location in well_data
 char *yx2pointer(int y, int x) {
-	return well_data + (y * WELL_WIDTH) + x;
+	return &well_data[y][x];
 }
 
 // All colour definitions are defined here :
@@ -295,15 +295,17 @@ void update_next(int next, int del) {
 
 }
 
+// Saves game to savefile.csp
 void savegame(POINTS points, int curr, int next) {
 	FILE *fp;
-	int i;	
+	int i, j;
 	char ch;
-	fp = fopen("savefile.txt", "w");
-	for(i = 0; i < (WELL_WIDTH * WELL_HEIGHT); i++) {
-		ch = well_data[i];
-		fputc(ch, fp);
-	}
+	fp = fopen("savefile.csp", "w");
+	for(i = 0; i < WELL_WIDTH; i++)
+		for(j = 0; j < WELL_HEIGHT; j++) {
+			ch = well_data[i][j];
+			fputc(ch, fp);
+		}
 	ch = '\n';
 	fputc(ch, fp);
 	fprintf(fp, "%d\n", points.points);
@@ -314,24 +316,27 @@ void savegame(POINTS points, int curr, int next) {
 	fclose(fp);
 }
 
+// Loads game from savefile.csp
 POINTS *loadgame(int *curr, int *next) {
 	FILE * fp;
-	int i;
+	int i, j;
 	char ch;
 	POINTS *temp;
 	temp = (POINTS *)malloc(sizeof(POINTS));
-	fp = fopen("savefile.txt", "r");
+	fp = fopen("savefile.csp", "r");
 	if(fp == NULL)
 		temp->points = -1;
 	else {
-		for(i = 0; i < (WELL_WIDTH * WELL_HEIGHT); i++) {
-			well_data[i] = fgetc(fp);
-		}
+		for(i = 0; i < WELL_WIDTH; i++)
+			for(j = 0; j < WELL_HEIGHT; j++) {
+				well_data[i][j] = fgetc(fp);
+			}
 		fgetc(fp);
 		fscanf(fp, "%d%d%d%d%d", &(temp->points), &(temp->lines), &(temp->level), curr, next);
 	}
 	return temp;
 }
+
 
 
 /* Drops block till it reaches either well floor or another line
@@ -453,9 +458,9 @@ void disp_score(char *message) {
 
 
 	if(message != NULL) {
-		wattrset(scorew, COLOR_PAIR(11));
-		mvwprintw(scorew, 17 , 15, "## %s ##", message);
-		wattroff(scorew, COLOR_PAIR(11));
+		wattrset(scorew, COLOR_PAIR(1));
+		mvwprintw(scorew, 17 , 19, "## %s ##", message);
+		wattroff(scorew, COLOR_PAIR(1));
 	}
 	FILE *fp;
 	fp = fopen("highscores.txt", "r");
@@ -664,13 +669,15 @@ if(fp != NULL) {
 void play_game(int level, int y) {
 
 	POINTS points, tpts, *temp;
-	int i, curr, next, count_lines_rem;
+	int i, j, curr, next, count_lines_rem;
 	char ch;
 
-	well_data = (unsigned char *)malloc(WELL_HEIGHT * WELL_WIDTH);
-	for(i = 0; i < (WELL_HEIGHT * WELL_WIDTH); i++)
-		well_data[i] = 0;
-
+	well_data = (char **)malloc((sizeof(char *)) * WELL_WIDTH);
+	for(i = 0; i < WELL_WIDTH; i++) {
+		well_data[i] = (char *)malloc((sizeof(char)) * WELL_HEIGHT);
+		for(j = 0; j < WELL_HEIGHT; j++)
+			well_data[i][j] = 0;
+	}
 	points.points = 0;
 	points.lines = 0;
 	points.level = level;

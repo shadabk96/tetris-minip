@@ -60,3 +60,5 @@ int store_score(POINTS argp);
 void play_game(int level, int y);
 void init_windows();
 void initialise_colors();
+POINTS *loadgame(int *curr, int *next);
+void savegame(POINTS points, int curr, int next);
