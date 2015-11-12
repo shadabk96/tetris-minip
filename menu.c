@@ -1,3 +1,23 @@
+/****************************************************************************
+ *		 	### SK's Tetris : SKetris ###
+ *
+ *  Copyright (C) 2015 Shadab Khan shadabk14.comp@coep.ac.in
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, version 3 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/> 
+ *  or write to the Free Software Foundation Inc., 51 Franklin Street,
+ *  Fifth Floor, Boston MA 02110-1301, USA.
+ *****************************************************************************/
+
 #include <ncurses.h>
 #include "alldefine.h"
 
@@ -14,7 +34,7 @@ void print_menu(WINDOW *menuw) {
 	int i;
 	char item[20];
 char list[NITEMS][20] = {	"New Game",
-				"Load Game",
+				"Load/Delete Game",
 				"Instructions",
 				"High Scores",
 				"About Developers",
@@ -37,7 +57,7 @@ char list[NITEMS][20] = {	"New Game",
 
 int menu() {
 	char list[NITEMS][20] = { 	"New Game",
-				"Load Game",
+				"Load/Delete Game",
 				"Instructions",
 				"High Scores",
 				"About Developers",

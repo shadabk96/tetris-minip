@@ -1,20 +1,21 @@
-
-/*****************************************************************************
- * Copyright (C) Shadab Khan shadabk14.comp@coep.ac.in
+/****************************************************************************
+ *		 	### SK's Tetris : SKetris ###
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or
- * (at your option) any later version.
+ *  Copyright (C) 2015 Shadab Khan shadabk14.comp@coep.ac.in
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, version 3 of the License.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/> 
+ *  or write to the Free Software Foundation Inc., 51 Franklin Street,
+ *  Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
 #include <stdio.h>
@@ -300,7 +301,60 @@ void savegame(POINTS points, int curr, int next) {
 	FILE *fp;
 	int i, j;
 	char ch;
-	fp = fopen("savefile.csp", "w");
+
+//Section for taking input.
+//--------------------------------------------------------------------------------------------------
+	scorew = newwin(GAME_HEIGHT - 2, GAME_WIDTH, 0, 0);
+	box(scorew, ACS_VLINE, ACS_HLINE);
+	wrefresh(scorew);
+
+	mvwprintw(scorew, 10, 20,"Please enter the savefile codename : [");
+	mvwprintw(scorew, 10, 20 + 10 + strlen("Please enter the savefile codename : ["),"]");
+	mvwprintw(scorew, 13, 30,"Press '+' to continue");
+	mvwprintw(scorew, 14, 30,"Press '-' for backspace");
+	mvwprintw(scorew, 15, 30,"Press '/' to cancel");
+	wrefresh(scorew);
+	nodelay(stdscr, FALSE);
+	int letter_count = 0;
+	char tempname[11];
+	for(i = 0; i < 10; i++)
+		tempname[i] = ' ';
+	tempname[10] = '\0';
+	do {
+		ch = wgetch(scorew);
+		tempname[letter_count] = ch;
+		if(ch == '-') {			
+			tempname[letter_count ] = ' ';
+			(letter_count > 0 ) ? ( letter_count = letter_count - 2) : letter_count;
+			tempname[letter_count + 1] = ' ';	
+		}
+		if(ch == '/')
+			return;
+		letter_count++;
+		wattrset(scorew, COLOR_PAIR(14));
+		mvwprintw(scorew, 10, 21 + strlen("Please enter the savefile codename : ["),"%s", tempname);		
+		wattroff(scorew, COLOR_PAIR(14));		
+		mvwprintw(scorew, 10, 20 + 10 + strlen("Please enter the savefile codename : ["),"]");
+		wrefresh(scorew);
+	} while((ch != '+') && (letter_count != 10));
+	if((ch == '+') || (ch == '#'))
+		tempname[letter_count - 1] = ' ';
+	if(ch == '#') {
+		int status;
+		status = remove(tempname);
+		if(status == 0)
+			mvwprintw(scorew, 18, 30,"File deleted successfully");	
+		else	
+			mvwprintw(scorew, 16, 30,"File doesn't exist");			
+	}
+	nodelay(stdscr, TRUE);
+	wclear(scorew);
+	wrefresh(scorew);
+	update_inst();
+//--------------------------------------------------------------------------------------------------
+
+
+	fp = fopen(tempname, "w");
 	for(i = 0; i < WELL_WIDTH; i++)
 		for(j = 0; j < WELL_HEIGHT; j++) {
 			ch = well_data[i][j];
@@ -323,7 +377,68 @@ POINTS *loadgame(int *curr, int *next) {
 	char ch;
 	POINTS *temp;
 	temp = (POINTS *)malloc(sizeof(POINTS));
-	fp = fopen("savefile.csp", "r");
+
+//Section for taking input.
+//--------------------------------------------------------------------------------------------------
+	scorew = newwin(GAME_HEIGHT - 2, GAME_WIDTH, 0, 0);
+	box(scorew, ACS_VLINE, ACS_HLINE);
+	wrefresh(scorew);
+
+	mvwprintw(scorew, 10, 20,"Please enter the savefile codename : [");
+	mvwprintw(scorew, 10, 20 + 10 + strlen("Please enter the savefile codename : ["),"]");
+	mvwprintw(scorew, 13, 30,"Press '+' to continue");
+	mvwprintw(scorew, 14, 30,"Press '-' for backspace");
+	mvwprintw(scorew, 15, 30,"Press '#' to delete savefile");
+	mvwprintw(scorew, 16, 30,"Press '/' to cancel");
+	wrefresh(scorew);
+	nodelay(stdscr, FALSE);
+	int letter_count = 0;
+	char tempname[11];
+	for(i = 0; i < 10; i++)
+		tempname[i] = ' ';
+	tempname[10] = '\0';
+	do {
+		ch = wgetch(scorew);
+		tempname[letter_count] = ch;
+		if(ch == '-') {			
+			tempname[letter_count ] = ' ';
+			(letter_count > 0 ) ? ( letter_count = letter_count - 2) : letter_count;
+			tempname[letter_count + 1] = ' ';	
+		}
+		letter_count++;
+		if(ch == '#')
+			break;
+		if(ch == '/') {
+			temp->points = -2;
+			return temp;
+		}
+		wattrset(scorew, COLOR_PAIR(14));
+		mvwprintw(scorew, 10, 21 + strlen("Please enter the savefile codename : ["),"%s", tempname);		
+		wattroff(scorew, COLOR_PAIR(14));		
+		mvwprintw(scorew, 10, 20 + 10 + strlen("Please enter the savefile codename : ["),"]");
+		wrefresh(scorew);
+	} while((ch != '+') && (letter_count != 10));
+	if((ch == '+') || (ch == '#'))
+		tempname[letter_count - 1] = ' ';
+	if(ch == '#') {
+		int status;
+		status = remove(tempname);
+		if(status == 0)
+			mvwprintw(scorew, 18, 30,"File deleted successfully");	
+		else	
+			mvwprintw(scorew, 18, 30,"File doesn't exist");				
+		ch = wgetch(scorew);
+		nodelay(stdscr, TRUE);
+		temp->points = -2;
+		return temp;
+	}
+	nodelay(stdscr, TRUE);
+	wclear(scorew);
+	wrefresh(scorew);
+	update_inst();
+//--------------------------------------------------------------------------------------------------
+
+	fp = fopen(tempname, "r");
 	if(fp == NULL)
 		temp->points = -1;
 	else {
@@ -696,8 +811,12 @@ void play_game(int level, int y) {
 		next = rand() % 7;
 		if(y == -3) {
 			temp = loadgame(&curr, &next);
-			if(temp->points == -1) {
-				char message[] = "No Savefile Found";
+			if((temp->points == -1) || (temp->points == -2)) {
+				char *message;
+				message = (char *)malloc(strlen("No Savefile Found") + 1 );
+				strcpy(message, "No Savefile Found");
+				if(temp->points == -2)
+					message = NULL;
 				disp_score(message);
 				delwin(wellw);
 				endwin();
