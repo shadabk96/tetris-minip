@@ -1,5 +1,5 @@
 /****************************************************************************
- *		 	### SK's Tetris : SKetris ###
+ *		 	### SK's Tetris : Sketris ###
  *
  *  Copyright (C) 2015 Shadab Khan shadabk14.comp@coep.ac.in
  *

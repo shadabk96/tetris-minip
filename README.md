@@ -1,1 +1,1 @@
-# Awesome game of tetris !!
+# SK's tetris : " Sketris "

@@ -1,5 +1,5 @@
 /****************************************************************************
- *		 	### SK's Tetris : SKetris ###
+ *		 	### SK's Tetris : Sketris ###
  *
  *  Copyright (C) 2015 Shadab Khan shadabk14.comp@coep.ac.in
  *
@@ -27,7 +27,7 @@ void print_menu(WINDOW *menuw) {
 	
 	wattrset(titlew, COLOR_PAIR(6));
 	box( titlew, ACS_BULLET, ACS_BULLET ); // sets default borders for the window
-	mvwprintw(titlew, 1, 1, " SK's Tetris : SKetris ");
+	mvwprintw(titlew, 1, 1, " SK's Tetris : Sketris ");
 	wattroff(titlew, COLOR_PAIR(6));
 	wrefresh(titlew);
     
@@ -72,7 +72,7 @@ int menu() {
 	titlew = newwin( 3, 25, 1, 1);
 	wattrset(titlew, COLOR_PAIR(6));
 	box( titlew, ACS_BULLET, ACS_BULLET ); // sets default borders for the window
-	mvwprintw(titlew, 1, 1, " SK's Tetris : SKetris ");
+	mvwprintw(titlew, 1, 1, " SK's Tetris : Sketris ");
 	wattroff(titlew, COLOR_PAIR(6));
 	wrefresh(titlew);
     
@@ -114,6 +114,8 @@ int menu() {
 				break;
 			case CONTROL_NEXT : if(i == 0) {
 						int lvl = 0;
+						miw = newwin( 10, 45, 4, 30 );
+						wrefresh(miw);
 						miw = newwin( 10, 25, 4, 30 );
 						mvwprintw(miw, 1, 2, "Select Level :");
 						mvwprintw(miw, 5, 2, "'%c' -> level up", CONTROL_UP);
@@ -145,7 +147,7 @@ int menu() {
 				}
 
 				if(i == 2) {
-					miw = newwin( 10, 20, 4, 30 );
+					miw = newwin( 10, 45, 4, 30 );
 					mvwprintw(miw, 1, 2, "Controls :");
 					mvwprintw(miw, 3, 2, "Move Left -> j");
 					mvwprintw(miw, 4, 2, "Move Right -> l");
@@ -153,16 +155,10 @@ int menu() {
 					mvwprintw(miw, 6, 2, "Rotate -> i");
 					mvwprintw(miw, 7, 2, "Pause Game -> p");
 					mvwprintw(miw, 8, 2, "Quit game -> v");
-					box(miw, ACS_VLINE, ACS_HLINE);	
 					wrefresh(miw);
 				}
 
 				if(i == 3) {
-				/*	miw = newwin( 10, 20, 1, 30 );
-					wclear(miw);
-					mvwprintw(miw, 2,  2, "\"No Highscore\"");
-					wrefresh(miw);
-				*/
 				disp_score(NULL);
 					clear();
 					refresh();
@@ -170,9 +166,16 @@ int menu() {
 				}
 				
 				if(i == 4) {
-					miw = newwin( 10, 20, 4, 30 );
+					miw = newwin( 10, 45, 4, 30 );
 					wclear(miw);
-					mvwprintw(miw, 2,  2, "  A game by :\n   \"Shadab Khan\"");
+					mvwprintw(miw, 2,  2, "Game Developer :");
+					mvwprintw(miw, 4,  2, "Contact info :");
+					mvwprintw(miw, 6,  2, "For Source code visit :");
+					wattrset(miw, COLOR_PAIR(12));
+					mvwprintw(miw, 3,  2, "  \"Shadab Khan\"");
+					mvwprintw(miw, 5,  2, "  \"shadabk14.comp@coep.ac.in\"");
+					mvwprintw(miw, 7,  2, "  \"https://github.com/shadabk/tetris-minip\"");
+					wattroff(miw, COLOR_PAIR(12));
 					wrefresh(miw);
 				}
 
