@@ -468,7 +468,13 @@ int drop_block(int type, int level) {
 	fd_set t1, t2;
 	struct timeval timeout;
 	int sel_ret;
-	if (0 == check_pos(y, x, type, orient))			//check if game over
+	if (0 == check_pos(y + 1, x, type, orient))			//check if game over
+		return -1;
+	if (0 == check_pos(y + 1, x + 1, type, orient))			//check if game over
+		return -1;
+	if (0 == check_pos(y + 1, x + 2, type, orient))			//check if game over
+		return -1;
+	if (0 == check_pos(y + 1, x + 3, type, orient))			//check if game over
 		return -1;
 
 	timeout.tv_sec = 0;
